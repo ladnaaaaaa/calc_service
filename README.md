@@ -18,24 +18,20 @@ Calc Service - это веб-сервис для вычисления арифм
 
 # Инструкция по запуску
 
-1. **Убедиться, что установлен Go** (версии 1.20 или выше).  
+1. **Убедиться, что установлен Go** (версии 1.20 или выше).
 
 2. **Склонировать репозиторий**:
 ```bash
    git clone https://github.com/ladnaaaaaa/calc_service.git
    cd calc_service
 ```
-3. Запустить сервис:
+3. **Запустить сервис**:
 ```bash
 go run ./cmd/calc_service/...
 ```
-4. Проверить работу (пример запроса с помощью curl):
+4. **Проверить работу** (пример запроса с помощью curl в cmd)
 ```bash
-curl --location 'http://localhost:8080/api/v1/calculate' \
---header 'Content-Type: application/json' \
---data '{
-  "expression": "2+2*2"
-}'
+curl -H "Content-Type: application/json" -X POST http://localhost:8080/api/v1/calculate -d "{\"expression\": \"2+2*2\"}"
 ```
 
 Ожидаемый ответ:
@@ -45,4 +41,4 @@ curl --location 'http://localhost:8080/api/v1/calculate' \
 }
 ```
 
-5. Остановить сервис нажатием Ctrl + C в терминале.
+5. **Остановить сервис** нажатием Ctrl + C в терминале.

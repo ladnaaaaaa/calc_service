@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ladnaaaaaa/calc_service/internal/calculator"
 	"log"
 	"net/http"
@@ -14,8 +15,8 @@ type CalculateRequest struct {
 }
 
 type CalculateResponse struct {
-	Result float64 `json:"result,omitempty"`
-	Error  string  `json:"error,omitempty"`
+	Result string `json:"result,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 func calculateHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +39,7 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	respondWithJson(w, CalculateResponse{Result: result}, http.StatusOK)
+	respondWithJson(w, CalculateResponse{Result: fmt.Sprint(result)}, http.StatusOK)
 }
 
 func validateExpression(w http.ResponseWriter, request CalculateRequest) bool {

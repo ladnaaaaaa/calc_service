@@ -1,20 +1,6 @@
 # Calc Service
 
-Calc Service - это веб-сервис для вычисления арифметических выражений. Пользователь отправляет выражение через HTTP POST-запрос, а сервис возвращает результат вычисления.
-
-## Endpoints
-
-### `POST /api/v1/calculate`
-
-Принимает JSON с выражением и возвращает результат или ошибку.
-
-#### Запрос
-
-```json
-{
-    "expression": "2+2*2"
-}
-```
+Calc Service - это веб-сервис для распределённых вычислений.
 
 # Инструкция по запуску
 
@@ -25,20 +11,34 @@ Calc Service - это веб-сервис для вычисления арифм
    git clone https://github.com/ladnaaaaaa/calc_service.git
    cd calc_service
 ```
-3. **Запустить сервис**:
+3. **Запустить оркестратор**:
 ```bash
-go run ./cmd/calc_service/...
+go run ./cmd/orchestrator/...
 ```
-4. **Проверить работу** (пример запроса с помощью curl в cmd)
+4. **Запустить агент (в отдельном окне терминала)**:
 ```bash
-curl -H "Content-Type: application/json" -X POST http://localhost:8080/api/v1/calculate -d "{\"expression\": \"2+2*2\"}"
+go run ./cmd/agent/...
 ```
+5. По адрессу: http://localhost:8080 в браузере будет доступен веб-интерфейс для работы с сервисом
 
-Ожидаемый ответ:
-```json
-{
-  "result": "6"
-}
+6. Unit-тесты можно запустить из интерфейса IDE или из командной строки
+
+# Эндпоинты
+
+API сервиса имеет следующие эндпоинты: 
+- POST /api/v1/calculate
+- GET /api/v1/expressions
+- GET /api/v1/expressions/:id
+- GET /internal/task
+- POST /internal/task
+
+# Переменные окружения
+
+Для того, чтобы задать переменные окружения можно запустить файл "environment.bat" (windows) или задать их в ручную:
+
 ```
-
-5. **Остановить сервис** нажатием Ctrl + C в терминале.
+set TIME_ADDITION_MS=1000
+set TIME_MULTIPLICATIONS_MS=2000
+set TIME_SUBTRACTION_MS=1000
+set TIME_DIVISIONS_MS=3000
+```

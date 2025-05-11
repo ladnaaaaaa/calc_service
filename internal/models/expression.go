@@ -18,6 +18,7 @@ type Expression struct {
 	Expression string           `gorm:"not null"`
 	Status     ExpressionStatus `gorm:"not null;default:'pending'"`
 	Result     float64
-	UserID     uint `gorm:"not null"`
-	User       User `gorm:"foreignKey:UserID"`
+	UserID     uint   `gorm:"not null"`
+	User       User   `gorm:"foreignKey:UserID"`
+	Tasks      []Task `gorm:"foreignKey:ExpressionID"`
 }

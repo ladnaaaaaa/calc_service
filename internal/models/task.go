@@ -7,16 +7,16 @@ import (
 type Operation string
 
 const (
-	OperationAdd      Operation = "add"
-	OperationSubtract Operation = "subtract"
-	OperationMultiply Operation = "multiply"
-	OperationDivide   Operation = "divide"
+	OperationAdd      Operation = "+"
+	OperationSubtract Operation = "-"
+	OperationMultiply Operation = "*"
+	OperationDivide   Operation = "/"
 )
 
 type Task struct {
 	gorm.Model
 	ExpressionID uint       `gorm:"not null"`
-	Expression   Expression `gorm:"foreignKey:ExpressionID"`
+	Expression   Expression `gorm:"foreignKey:ExpressionID;references:ID"`
 	Arg1         float64    `gorm:"not null"`
 	Arg2         float64    `gorm:"not null"`
 	Operation    Operation  `gorm:"not null"`

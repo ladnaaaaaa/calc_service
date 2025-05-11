@@ -139,10 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 list.innerHTML = data.expressions.map(expr => `
                     <div class="expression-item">
                         <div>
-                            <strong>${expr.expression}</strong>
-                            <div class="status ${expr.status}">${expr.status}</div>
+                            <strong>${expr.Expression}</strong>
+                            <div class="status ${expr.Status}">${expr.Status}</div>
                         </div>
-                        <div>${expr.result || ''}</div>
+                        <div>${expr.Result || ''}</div>
                     </div>
                 `).join('');
             } else {

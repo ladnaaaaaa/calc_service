@@ -4,19 +4,14 @@ package calculator;
 
 option go_package = "github.com/ladnaaaaaa/calc_service/api";
 
-// Сервис для общения между оркестратором и агентом
 service Calculator {
-  // Получение задачи для вычисления
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {}
   
-  // Отправка результата вычисления
   rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse) {}
 }
 
-// Запрос на получение задачи
 message GetTaskRequest {}
 
-// Ответ с задачей
 message GetTaskResponse {
   uint64 task_id = 1;
   double arg1 = 2;
@@ -25,13 +20,11 @@ message GetTaskResponse {
   int64 operation_time = 5;
 }
 
-// Запрос на отправку результата
 message SubmitResultRequest {
   uint64 task_id = 1;
   double result = 2;
 }
 
-// Ответ на отправку результата
 message SubmitResultResponse {
   bool success = 1;
   string error = 2;

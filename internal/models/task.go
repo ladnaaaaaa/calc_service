@@ -22,5 +22,5 @@ type Task struct {
 	Operation    Operation  `gorm:"not null"`
 	Result       float64
 	Status       ExpressionStatus `gorm:"not null;default:'pending'"`
-	OrderNum     int              `gorm:"not null;column:order_num"` // Порядок выполнения задачи
+	OrderNum     int              `gorm:"not null;column:order_num"`
 }

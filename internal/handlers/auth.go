@@ -25,21 +25,18 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Check if user already exists
 	var existingUser models.User
 	if result := database.DB.Where("login = ?", req.Login).First(&existingUser); result.Error == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 		return
 	}
 
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
 		return
 	}
 
-	// Create new user
 	user := models.User{
 		Login:    req.Login,
 		Password: string(hashedPassword),
@@ -60,27 +57,23 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Find user
 	var user models.User
 	if result := database.DB.Where("login = ?", req.Login).First(&user); result.Error != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Check password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"login":   user.Login,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	// Sign token with secret key
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})

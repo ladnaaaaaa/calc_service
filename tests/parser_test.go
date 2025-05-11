@@ -116,7 +116,6 @@ func TestTaskOrder(t *testing.T) {
 	tasks, err := orchestrator.ParseExpression(expression)
 	assert.NoError(t, err)
 
-	// Verify task order
 	assert.Equal(t, 3, len(tasks))
 	assert.Equal(t, models.OperationMultiply, tasks[0].Operation) // 3*4
 	assert.Equal(t, models.OperationAdd, tasks[1].Operation)      // 2+12
@@ -128,7 +127,6 @@ func TestTaskDependencies(t *testing.T) {
 	tasks, err := orchestrator.ParseExpression(expression)
 	assert.NoError(t, err)
 
-	// Verify task dependencies
 	assert.Equal(t, 3, len(tasks))
 	assert.Equal(t, models.OperationAdd, tasks[0].Operation)      // 2+3
 	assert.Equal(t, models.OperationSubtract, tasks[1].Operation) // 4-5

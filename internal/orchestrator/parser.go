@@ -137,7 +137,6 @@ func buildTasks(postfix []Token) ([]*models.Task, error) {
 
 		tasks = append(tasks, task)
 
-		// Вычисляем результат операции и кладём его в стек
 		var res float64
 		switch token.Value {
 		case "+":

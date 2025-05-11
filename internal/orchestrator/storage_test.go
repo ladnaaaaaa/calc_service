@@ -82,7 +82,6 @@ func TestTaskDependencies(t *testing.T) {
 	if store.IsTaskReady(&tasks[1]) {
 		t.Errorf("task2 should not be ready before task1 is completed")
 	}
-	// Завершаем первую задачу
 	tasks[0].Status = models.StatusCompleted
 	err = store.UpdateTask(&tasks[0])
 	if err != nil {

@@ -33,13 +33,11 @@ func NewStore() *Store {
 }
 
 func (s *Store) IsTaskReady(task *models.Task) bool {
-	// Get all tasks for this expression
 	tasks, err := s.GetTasksByExpressionID(task.ExpressionID)
 	if err != nil {
 		return false
 	}
 
-	// Check if all tasks with lower order numbers are completed
 	for _, t := range tasks {
 		if t.OrderNum < task.OrderNum && t.Status != models.StatusCompleted {
 			return false
@@ -142,12 +140,12 @@ type Expression struct {
 type Task struct {
 	ID           string
 	ExpressionID string
-	Arg1ID       string // ID первого аргумента
-	Arg2ID       string // ID второго аргумента
+	Arg1ID       string
+	Arg2ID       string
 	Operation    string
 	Status       string
 	Result       float64
-	DependsOn    []string // Массив ID зависимых задач
+	DependsOn    []string
 	StartedAt    time.Time
 	CompletedAt  time.Time
 	OrderNum     int

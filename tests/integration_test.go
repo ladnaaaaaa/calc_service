@@ -15,7 +15,6 @@ import (
 )
 
 func setupTestServer() *orchestrator.Server {
-	// Set test environment variables
 	os.Setenv("JWT_SECRET", "test-secret")
 	os.Setenv("TIME_ADDITION_MS", "100")
 	os.Setenv("TIME_SUBTRACTION_MS", "100")
@@ -23,20 +22,16 @@ func setupTestServer() *orchestrator.Server {
 	os.Setenv("TIME_DIVISIONS_MS", "100")
 	os.Setenv("DB_PATH", "test.db")
 
-	// Remove test DB before each run
 	_ = os.Remove("test.db")
 
-	// Initialize database
 	database.Init()
 
-	// Create server
 	return orchestrator.NewServer()
 }
 
 func TestIntegration(t *testing.T) {
 	server := setupTestServer()
 
-	// Test registration
 	t.Run("Registration", func(t *testing.T) {
 		reqBody := map[string]string{
 			"login":    "testuser",
@@ -52,7 +47,6 @@ func TestIntegration(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	// Test login
 	var token string
 	t.Run("Login", func(t *testing.T) {
 		reqBody := map[string]string{
@@ -74,7 +68,6 @@ func TestIntegration(t *testing.T) {
 		assert.NotEmpty(t, token)
 	})
 
-	// Test expression calculation
 	var expressionID uint
 	t.Run("Calculate Expression", func(t *testing.T) {
 		reqBody := map[string]string{
@@ -96,7 +89,6 @@ func TestIntegration(t *testing.T) {
 		assert.NotZero(t, expressionID)
 	})
 
-	// Test get expressions list
 	t.Run("Get Expressions", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/expressions", nil)
@@ -111,7 +103,6 @@ func TestIntegration(t *testing.T) {
 		assert.NotEmpty(t, expressions)
 	})
 
-	// Test get specific expression
 	t.Run("Get Expression", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/expressions/1", nil)
@@ -126,9 +117,7 @@ func TestIntegration(t *testing.T) {
 		assert.Equal(t, "2+3*4", expr["Expression"])
 	})
 
-	// Test task processing
 	t.Run("Task Processing", func(t *testing.T) {
-		// Get task
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/internal/task", nil)
 		server.Engine.ServeHTTP(w, req)
@@ -140,7 +129,6 @@ func TestIntegration(t *testing.T) {
 		task := taskResponse["task"].(map[string]interface{})
 		taskID := task["id"].(float64)
 
-		// Submit task result
 		reqBody := map[string]interface{}{
 			"id":     taskID,
 			"result": 14.0,
@@ -154,10 +142,8 @@ func TestIntegration(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		// Wait for expression to complete
 		time.Sleep(200 * time.Millisecond)
 
-		// Check expression status
 		w = httptest.NewRecorder()
 		req, _ = http.NewRequest("GET", "/api/v1/expressions/1", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -173,7 +159,6 @@ func TestIntegration(t *testing.T) {
 	})
 }
 
-// Добавляю edge-case тесты
 func TestIntegration_EdgeCases(t *testing.T) {
 	server := setupTestServer()
 
@@ -205,7 +190,7 @@ func TestIntegration_EdgeCases(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/expressions/9999", nil)
 		server.Engine.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusUnauthorized, w.Code) // Без токена
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
 	t.Run("Nonexistent Task", func(t *testing.T) {

@@ -35,7 +35,6 @@ func TestParseExpression(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			// Эмулируем выполнение задач по принципу постфиксного вычисления
 			stack := make([]float64, 0)
 			for _, task := range tasks {
 				stack = append(stack, task.Arg1)

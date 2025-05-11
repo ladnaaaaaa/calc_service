@@ -5,7 +5,6 @@ option go_package = ".;myservice";
 service MyService {
   rpc GetItem (GetItemRequest) returns (ItemResponse);
   rpc CreateItem (CreateItemRequest) returns (ItemResponse);
-  // Добавьте другие методы
 }
 
 message GetItemRequest {

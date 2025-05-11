@@ -18,7 +18,6 @@ type Server struct {
 func NewServer() *Server {
 	engine := gin.Default()
 
-	// Получаем путь к директории проекта
 	_, b, _, _ := runtime.Caller(0)
 	projectRoot := filepath.Dir(filepath.Dir(filepath.Dir(b)))
 	templatePath := filepath.Join(projectRoot, "web", "templates", "*")
@@ -33,7 +32,6 @@ func NewServer() *Server {
 		store:  store,
 	}
 
-	// Setup all routes
 	server.setupRoutes()
 
 	return server
@@ -46,15 +44,12 @@ func (s *Server) Start(addr string) error {
 func (s *Server) setupRoutes() {
 	r := s.Engine
 
-	// Web routes
 	r.GET("/", s.handleHome)
 	r.GET("/expressions", s.handleGetExpressionsRequest)
 
-	// Public API routes
 	r.POST("/api/v1/register", handlers.Register)
 	r.POST("/api/v1/login", handlers.Login)
 
-	// Protected API routes
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware())
 	{
@@ -63,7 +58,6 @@ func (s *Server) setupRoutes() {
 		protected.GET("/expressions/:id", s.handleGetExpression)
 	}
 
-	// Internal routes for agent communication
 	internal := r.Group("/internal")
 	{
 		internal.GET("/task", s.handleGetTask)

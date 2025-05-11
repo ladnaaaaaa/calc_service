@@ -18,7 +18,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the header has the Bearer prefix
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
@@ -37,7 +36,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set user information in context
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			c.Set("user_id", uint(claims["user_id"].(float64)))
 			c.Set("login", claims["login"].(string))

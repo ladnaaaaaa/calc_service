@@ -142,7 +142,6 @@ func (s *Server) handleGetTask(c *gin.Context) {
 		return
 	}
 
-	// Find the first task that is ready to be executed
 	var readyTask *models.Task
 	for i := range tasks {
 		if s.store.IsTaskReady(&tasks[i]) {

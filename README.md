@@ -1,6 +1,6 @@
 # Calc Service
 
-Calc Service - это веб-сервис для распределённых вычислений, который позволяет выполнять арифметические выражения в распределённом режиме. Сервис использует архитектуру, состоящую из оркестратора и агентов, для эффективного выполнения задач.
+Calc Service - это веб-сервис для распределённых вычислений, который позволяет выполнять арифметические выражения в многопользовательском режиме. Сервис использует архитектуру, состоящую из оркестратора и агентов, для эффективного выполнения задач.
 
 ## Ссылка на сайт
 
@@ -13,10 +13,10 @@ Calc Service - это веб-сервис для распределённых в
 2. **Установите GCC**:
    - Для Windows: Скачайте и установите MinGW-w64 с официального сайта по [инструкции](https://programforyou.ru/poleznoe/kak-ustanovit-gcc-dlya-windows?ysclid=majlp37z7w118007909).
 
-3. **Настройте переменную окружения CGO**:
+3. **Настройте переменную окружения CGO_ENABLED**:
    - Установите переменную окружения `CGO_ENABLED=1` для включения поддержки CGO:
      ```bash
-     set CGO_ENABLED=1
+      go env -w CGO_ENABLED=1
      ```
 
 4. **Установите Protocol Buffers Compiler (protoc)**:
@@ -35,22 +35,13 @@ Calc Service - это веб-сервис для распределённых в
    ```bash
    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-   ```
 
-6. **Сгенерируйте gRPC код**:
-   ```bash
-   .\scripts\generate_proto.bat
-   ```
-   После выполнения в папке `api` должны появиться файлы:
-   - `calculator.pb.go`
-   - `calculator_grpc.pb.go`
-
-7. **Скачайте зависимости проекта**:
+6. **Скачайте зависимости проекта**:
    ```bash
    go mod tidy
    ```
 
-8. **Запустите оркестратор**:
+7. **Запустите оркестратор**:
    ```bash
    go run ./cmd/orchestrator/...
    ```
@@ -58,15 +49,23 @@ Calc Service - это веб-сервис для распределённых в
    - HTTP-сервер на порту 8080 (для веб-интерфейса)
    - gRPC-сервер на порту 50051 (для общения с агентами)
 
-9. **Запустите агент (в отдельном окне терминала)**:
+8. **Запустите агент (в отдельном окне терминала)**:
    ```bash
    go run ./cmd/agent/...
    ```
-
-10. **Откройте веб-интерфейс**:
+9. **Откройте веб-интерфейс**:
     - Перейдите по адресу [http://localhost:8080](http://localhost:8080) в браузере.
     - Пройдите авторизацию.
-    - Введите арифметическое выражение и нажмите "Вычислить".
+
+![](images/login.png)
+
+
+![](images/register.png)
+
+  - Введите арифметическое выражение и нажмите "Вычислить".
+
+![](images/calculate.png)
+
 
 ## Эндпоинты API
 
@@ -97,4 +96,60 @@ set TIME_ADDITION_MS=1000
 set TIME_MULTIPLICATIONS_MS=2000
 set TIME_SUBTRACTION_MS=1000
 set TIME_DIVISIONS_MS=3000
+```
+## Покрытие кода
+
+Unit-тесты (модульные) расположены в файлах:
+- `internal/orchestrator/handlers_test.go`
+- `internal/orchestrator/parser_test.go`
+- `internal/orchestrator/storage_test.go`
+- `internal/agent/client_test.go`
+
+Интеграционные тесты расположены в файлах:
+- `tests/agent_test.go`
+- `tests/integration_test.go`
+- `tests/parser_test.go`
+
+
+## Примеры использования API
+````bash
+POST http://localhost:8080/api/v1/register
+Content-Type: application/json
+
+{"login":"test1","password":"test1234"}
+
+###
+
+POST http://localhost:8080/api/v1/login
+Content-Type: application/json
+
+{"login":"test1","password":"test1234"}
+
+###
+
+POST http://localhost:8080/api/v1/calculate
+Content-Type: application/json
+Authorization: Bearer <полученный.токен>
+
+{"expression":"2 + 3 * 4"}
+````
+### Curl
+
+```bash
+curl -X POST http://localhost:8080/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"login":"test1","password":"test1234"}'
+  
+###
+
+curl -X POST http://localhost:8080/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"test1","password":"test1234"}'
+  
+###
+
+curl -X POST http://localhost:8080/api/v1/calculate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <полученный.токен>" \
+  -d '{"expression":"2 + 3 * 4"}'
 ```

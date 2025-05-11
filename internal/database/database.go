@@ -1,27 +1,27 @@
 package database
 
 import (
-	"fmt"
+	"github.com/ladnaaaaaa/calc_service/internal/models"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 	"log"
 	"os"
-
-	"calc_service/internal/models"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"path/filepath"
 )
 
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-	)
+	// Создаем директорию для базы данных, если она не существует
+	dbDir := "data"
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		log.Fatal("Failed to create database directory:", err)
+	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Путь к файлу базы данных
+	dbPath := filepath.Join(dbDir, "calculator.db")
+
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

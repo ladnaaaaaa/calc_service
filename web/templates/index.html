@@ -10,15 +10,33 @@
 <div class="container">
     <h1>Калькулятор выражений</h1>
 
-    <div class="section">
+    <div id="authSection" class="section">
+        <h2>Авторизация</h2>
+        <form id="loginForm">
+            <input type="text" id="loginInput" placeholder="Логин" required>
+            <input type="password" id="passwordInput" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+        <p>Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a></p>
+    </div>
+
+    <div id="registerSection" class="section" style="display: none;">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
+            <input type="text" id="registerLoginInput" placeholder="Логин" required>
+            <input type="password" id="registerPasswordInput" placeholder="Пароль" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p>Уже есть аккаунт? <a href="#" id="showLogin">Войти</a></p>
+    </div>
+
+    <div id="calcSection" class="section" style="display: none;">
         <h2>Новое выражение</h2>
         <form id="expressionForm">
             <input type="text" id="expressionInput" placeholder="Введите выражение (например: 2+3*4)" required>
             <button type="submit">Отправить</button>
         </form>
-    </div>
 
-    <div class="section">
         <h2>Список выражений</h2>
         <div id="expressionsList">
             <div class="loading">Загрузка...</div>

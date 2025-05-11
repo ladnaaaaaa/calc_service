@@ -1,17 +1,21 @@
 package orchestrator
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/ladnaaaaaa/calc_service/internal/database"
+	"github.com/ladnaaaaaa/calc_service/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupRouter() *Server {
+	database.InitTestDB(nil)
+	database.ClearDB()
 	server := NewServer()
-	server.setupRoutes()
 	return server
 }
 
@@ -19,43 +23,54 @@ func TestCalculateHandler(t *testing.T) {
 	server := setupRouter()
 	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", "/api/v1/calculate",
-		strings.NewReader(`{"expression":"2+3*4"}`))
-	req.Header.Set("Content-Type", "application/json")
+	regReq, _ := http.NewRequest("POST", "/api/v1/register", strings.NewReader(`{"login":"testuser","password":"testpass"}`))
+	regReq.Header.Set("Content-Type", "application/json")
+	server.Engine.ServeHTTP(httptest.NewRecorder(), regReq)
 
-	server.engine.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusCreated, w.Code)
+	loginReq, _ := http.NewRequest("POST", "/api/v1/login", strings.NewReader(`{"login":"testuser","password":"testpass"}`))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginW := httptest.NewRecorder()
+	server.Engine.ServeHTTP(loginW, loginReq)
+	assert.Equal(t, http.StatusOK, loginW.Code)
+
+	var loginResp map[string]string
+	_ = json.NewDecoder(loginW.Body).Decode(&loginResp)
+	token := loginResp["token"]
+	assert.NotEmpty(t, token)
+
+	req, _ := http.NewRequest("POST", "/api/v1/calculate", strings.NewReader(`{"expression":"2+3*4"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	server.Engine.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestGetTaskHandler(t *testing.T) {
 	server := setupRouter()
 
-	numTask1 := &Task{
-		ID:     "num_2",
-		Result: 2,
-		Status: "completed",
+	expr := &models.Expression{
+		Expression: "2+3",
+		Status:     models.StatusPending,
+		UserID:     1,
 	}
-	numTask2 := &Task{
-		ID:     "num_3",
-		Result: 3,
-		Status: "completed",
-	}
-	mainTask := &Task{
-		ID:        "task_1",
-		Arg1ID:    "num_2",
-		Arg2ID:    "num_3",
-		Operation: "+",
-		Status:    "pending",
-		DependsOn: []string{"num_2", "num_3"},
-	}
+	err := server.store.AddExpression(expr)
+	assert.NoError(t, err)
 
-	server.store.AddTask(numTask1)
-	server.store.AddTask(numTask2)
-	server.store.AddTask(mainTask)
+	task1 := &models.Task{
+		ExpressionID: expr.ID,
+		Arg1:         2,
+		Arg2:         3,
+		Operation:    models.OperationAdd,
+		Status:       models.StatusPending,
+		OrderNum:     0,
+	}
+	err = server.store.AddTask(task1)
+	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/internal/task", nil)
 
-	server.engine.ServeHTTP(w, req)
+	server.Engine.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

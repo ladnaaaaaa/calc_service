@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/ladnaaaaaa/calc_service/internal/models"
 )
 
 type Token struct {
@@ -12,23 +14,23 @@ type Token struct {
 	Num   float64
 }
 
-func parseExpression(expr string) ([]*Task, string, error) {
+func ParseExpression(expr string) ([]*models.Task, error) {
 	tokens, err := tokenize(expr)
 	if err != nil {
-		return nil, "", fmt.Errorf("tokenize error: %v", err)
+		return nil, fmt.Errorf("tokenize error: %v", err)
 	}
 
 	postfix, err := shuntingYard(tokens)
 	if err != nil {
-		return nil, "", fmt.Errorf("shuntingYard error: %v", err)
+		return nil, fmt.Errorf("shuntingYard error: %v", err)
 	}
 
-	tasks, finalID, err := buildTasks(postfix)
+	tasks, err := buildTasks(postfix)
 	if err != nil {
-		return nil, "", fmt.Errorf("buildTasks error: %v", err)
+		return nil, fmt.Errorf("buildTasks error: %v", err)
 	}
 
-	return tasks, finalID, nil
+	return tasks, nil
 }
 
 func tokenize(expr string) ([]Token, error) {
@@ -105,54 +107,55 @@ func shuntingYard(tokens []Token) ([]Token, error) {
 	return output, nil
 }
 
-// internal/orchestrator/parser.go
-func buildTasks(postfix []Token) ([]*Task, string, error) {
-	var stack []string
-	tasks := make([]*Task, 0)
-	values := make(map[string]float64)
+func buildTasks(postfix []Token) ([]*models.Task, error) {
+	var stack []float64
+	tasks := make([]*models.Task, 0)
+	orderNum := 0
 
 	for _, token := range postfix {
 		if token.Type == "num" {
-			// Создаем завершенную задачу для числа
-			id := fmt.Sprintf("num_%d", len(tasks)+1)
-			task := &Task{
-				ID:     id,
-				Result: token.Num,
-				Status: "completed",
-			}
-			stack = append(stack, id)
-			values[id] = token.Num
-			tasks = append(tasks, task)
+			stack = append(stack, token.Num)
 			continue
 		}
 
 		if len(stack) < 2 {
-			return nil, "", fmt.Errorf("invalid expression")
+			return nil, fmt.Errorf("invalid expression")
 		}
 
-		b := stack[len(stack)-1]
-		a := stack[len(stack)-2]
+		arg2 := stack[len(stack)-1]
+		arg1 := stack[len(stack)-2]
 		stack = stack[:len(stack)-2]
 
-		taskID := fmt.Sprintf("op_%d", len(tasks)+1)
-		task := &Task{
-			ID:        taskID,
-			Arg1ID:    a,
-			Arg2ID:    b,
-			Operation: token.Value,
-			Status:    "pending",
-			DependsOn: []string{a, b},
+		task := &models.Task{
+			Arg1:      arg1,
+			Arg2:      arg2,
+			Operation: models.Operation(token.Value),
+			Status:    models.StatusPending,
+			OrderNum:  orderNum,
 		}
+		orderNum++
 
-		stack = append(stack, taskID)
 		tasks = append(tasks, task)
+
+		var res float64
+		switch token.Value {
+		case "+":
+			res = arg1 + arg2
+		case "-":
+			res = arg1 - arg2
+		case "*":
+			res = arg1 * arg2
+		case "/":
+			res = arg1 / arg2
+		}
+		stack = append(stack, res)
 	}
 
 	if len(stack) != 1 {
-		return nil, "", fmt.Errorf("invalid expression structure")
+		return nil, fmt.Errorf("invalid expression structure")
 	}
 
-	return tasks, stack[0], nil
+	return tasks, nil
 }
 
 func precedence(op string) int {

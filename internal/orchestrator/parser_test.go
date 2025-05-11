@@ -1,134 +1,63 @@
 package orchestrator
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/ladnaaaaaa/calc_service/internal/models"
 )
 
 func TestParseExpression(t *testing.T) {
 	tests := []struct {
-		name    string
-		expr    string
-		want    float64
-		wantErr bool
+		name     string
+		expr     string
+		expected float64
 	}{
-		{
-			name:    "simple addition",
-			expr:    "2+3",
-			want:    5,
-			wantErr: false,
-		},
-		{
-			name:    "simple addition",
-			expr:    "2+3",
-			want:    5,
-			wantErr: false,
-		},
-		{
-			name:    "multiplication priority",
-			expr:    "2+3*4",
-			want:    14,
-			wantErr: false,
-		},
-		{
-			name:    "with parentheses",
-			expr:    "(2+3)*4",
-			want:    20,
-			wantErr: false,
-		},
-		{
-			name:    "division",
-			expr:    "10/2",
-			want:    5,
-			wantErr: false,
-		},
-		{
-			name:    "complex expression",
-			expr:    "(10-4)*3/(2+1)",
-			want:    6,
-			wantErr: false,
-		},
-		{
-			name:    "invalid characters",
-			expr:    "2+a",
-			wantErr: true,
-		},
-		{
-			name:    "empty expression",
-			expr:    "",
-			wantErr: true,
-		},
-		{
-			name:    "invalid parentheses",
-			expr:    "2+(3*4",
-			wantErr: true,
-		},
-		{
-			name:    "invalid characters",
-			expr:    "2+a",
-			wantErr: true,
-		},
+		{"simple_addition", "2+3", 5},
+		{"multiplication_priority", "2+3*4", 14},
+		{"with_parentheses", "(2+3)*4", 20},
+		{"division", "10/2", 5},
+		{"complex_expression", "(10-4)*3/(2+1)", 6},
+		{"invalid_characters", "2+a", 0},
+		{"empty_expression", "", 0},
+		{"invalid_parentheses", "(2+3", 0},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tasks, finalID, err := parseExpression(tt.expr)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("parseExpression() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.wantErr {
+			tasks, err := ParseExpression(tt.expr)
+			if tt.name == "invalid_characters" || tt.name == "empty_expression" || tt.name == "invalid_parentheses" {
+				if err == nil {
+					t.Errorf("expected error for invalid input, got nil")
+				}
 				return
 			}
-
-			store := NewStore()
-			expr := &Expression{
-				ID:          "test",
-				Tasks:       tasks,
-				FinalTaskID: finalID,
-				Status:      "processing",
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
+			stack := make([]float64, 0)
 			for _, task := range tasks {
-				store.AddTask(task)
+				stack = append(stack, task.Arg1)
+				stack = append(stack, task.Arg2)
+				arg2 := stack[len(stack)-1]
+				arg1 := stack[len(stack)-2]
+				stack = stack[:len(stack)-2]
+				var res float64
+				switch task.Operation {
+				case models.OperationAdd:
+					res = arg1 + arg2
+				case models.OperationSubtract:
+					res = arg1 - arg2
+				case models.OperationMultiply:
+					res = arg1 * arg2
+				case models.OperationDivide:
+					res = arg1 / arg2
+				}
+				stack = append(stack, res)
 			}
-
-			for {
-				var readyTask *Task
-				for _, task := range store.GetPendingTasks() {
-					if store.IsTaskReady(task) {
-						readyTask = task
-						break
-					}
-				}
-				if readyTask == nil {
-					break
-				}
-
-				arg1, _ := store.GetTask(readyTask.Arg1ID)
-				arg2, _ := store.GetTask(readyTask.Arg2ID)
-
-				switch readyTask.Operation {
-				case "+":
-					readyTask.Result = arg1.Result + arg2.Result
-				case "-":
-					readyTask.Result = arg1.Result - arg2.Result
-				case "*":
-					readyTask.Result = arg1.Result * arg2.Result
-				case "/":
-					readyTask.Result = arg1.Result / arg2.Result
-				}
-				readyTask.Status = "completed"
-				store.UpdateTask(readyTask)
+			if len(stack) > 0 && stack[len(stack)-1] != tt.expected {
+				t.Errorf("expected result %v, got %v", tt.expected, stack[len(stack)-1])
 			}
-
-			finalTask, _ := store.GetTask(finalID)
-			expr.Result = finalTask.Result
-			expr.Status = "completed"
-			store.AddExpression(expr)
-
-			updatedExpr, _ := store.GetExpression("test")
-			assert.Equal(t, tt.want, updatedExpr.Result)
-			assert.Equal(t, "completed", updatedExpr.Status)
 		})
 	}
 }

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "github.com/ladnaaaaaa/calc_service/api";
+
+service Calculator {
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {}
+  
+  rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse) {}
+}
+
+message GetTaskRequest {}
+
+message GetTaskResponse {
+  uint64 task_id = 1;
+  double arg1 = 2;
+  double arg2 = 3;
+  string operation = 4;
+  int64 operation_time = 5;
+}
+
+message SubmitResultRequest {
+  uint64 task_id = 1;
+  double result = 2;
+}
+
+message SubmitResultResponse {
+  bool success = 1;
+  string error = 2;
+} 

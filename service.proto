@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = ".;myservice";
+
+service MyService {
+  rpc GetItem (GetItemRequest) returns (ItemResponse);
+  rpc CreateItem (CreateItemRequest) returns (ItemResponse);
+}
+
+message GetItemRequest {
+  string id = 1;
+}
+
+message CreateItemRequest {
+  string name = 1;
+  string description = 2;
+}
+
+message ItemResponse {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}

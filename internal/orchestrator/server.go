@@ -1,6 +1,10 @@
 package orchestrator
 
 import (
+	"path/filepath"
+
+	"runtime"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ladnaaaaaa/calc_service/internal/handlers"
 	"github.com/ladnaaaaaa/calc_service/internal/middleware"
@@ -13,13 +17,21 @@ type Server struct {
 
 func NewServer() *Server {
 	engine := gin.Default()
+
+	// Получаем путь к директории проекта
+	_, b, _, _ := runtime.Caller(0)
+	projectRoot := filepath.Dir(filepath.Dir(filepath.Dir(b)))
+	templatePath := filepath.Join(projectRoot, "web", "templates", "*")
+
+	engine.LoadHTMLGlob(templatePath)
+	engine.Static("/static", filepath.Join(projectRoot, "web", "static"))
+
+	store := NewStore()
+
 	server := &Server{
 		Engine: engine,
-		store:  NewStore(),
+		store:  store,
 	}
-
-	// Load templates
-	engine.LoadHTMLGlob("web/templates/*")
 
 	// Setup all routes
 	server.setupRoutes()
@@ -33,9 +45,6 @@ func (s *Server) Start(addr string) error {
 
 func (s *Server) setupRoutes() {
 	r := s.Engine
-
-	// Static files
-	r.Static("/static", "web/static")
 
 	// Web routes
 	r.GET("/", s.handleHome)

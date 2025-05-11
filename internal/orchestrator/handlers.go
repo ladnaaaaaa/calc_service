@@ -56,7 +56,7 @@ func (s *Server) handleCalculate(c *gin.Context) {
 		return
 	}
 
-	tasks, err := parseExpression(req.Expression)
+	tasks, err := ParseExpression(req.Expression)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -215,7 +215,7 @@ func (s *Server) handleSubmitTask(c *gin.Context) {
 	if allCompleted {
 		expr.Status = models.StatusCompleted
 		expr.Result = task.Result
-		if err := s.store.AddExpression(expr); err != nil {
+		if err := s.store.UpdateExpression(expr); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update expression"})
 			return
 		}

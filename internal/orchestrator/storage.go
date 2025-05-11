@@ -125,6 +125,10 @@ func (s *Store) GetOperationTime(op string) time.Duration {
 	return s.opTimes[op]
 }
 
+func (s *Store) UpdateExpression(expr *models.Expression) error {
+	return database.DB.Save(expr).Error
+}
+
 type Expression struct {
 	ID          string
 	Status      string

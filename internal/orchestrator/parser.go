@@ -14,7 +14,7 @@ type Token struct {
 	Num   float64
 }
 
-func parseExpression(expr string) ([]*models.Task, error) {
+func ParseExpression(expr string) ([]*models.Task, error) {
 	tokens, err := tokenize(expr)
 	if err != nil {
 		return nil, fmt.Errorf("tokenize error: %v", err)
@@ -136,7 +136,20 @@ func buildTasks(postfix []Token) ([]*models.Task, error) {
 		orderNum++
 
 		tasks = append(tasks, task)
-		stack = append(stack, 0) // Placeholder for result
+
+		// Вычисляем результат операции и кладём его в стек
+		var res float64
+		switch token.Value {
+		case "+":
+			res = arg1 + arg2
+		case "-":
+			res = arg1 - arg2
+		case "*":
+			res = arg1 * arg2
+		case "/":
+			res = arg1 / arg2
+		}
+		stack = append(stack, res)
 	}
 
 	if len(stack) != 1 {

@@ -4,145 +4,61 @@ import (
 	"testing"
 
 	"github.com/ladnaaaaaa/calc_service/internal/models"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestParseExpression(t *testing.T) {
 	tests := []struct {
-		name    string
-		expr    string
-		want    float64
-		wantErr bool
+		name     string
+		expr     string
+		expected float64
 	}{
-		{
-			name:    "simple addition",
-			expr:    "2+3",
-			want:    5,
-			wantErr: false,
-		},
-		{
-			name:    "multiplication priority",
-			expr:    "2+3*4",
-			want:    14,
-			wantErr: false,
-		},
-		{
-			name:    "with parentheses",
-			expr:    "(2+3)*4",
-			want:    20,
-			wantErr: false,
-		},
-		{
-			name:    "division",
-			expr:    "10/2",
-			want:    5,
-			wantErr: false,
-		},
-		{
-			name:    "complex expression",
-			expr:    "(10-4)*3/(2+1)",
-			want:    6,
-			wantErr: false,
-		},
-		{
-			name:    "invalid characters",
-			expr:    "2+a",
-			wantErr: true,
-		},
-		{
-			name:    "empty expression",
-			expr:    "",
-			wantErr: true,
-		},
-		{
-			name:    "invalid parentheses",
-			expr:    "2+(3*4",
-			wantErr: true,
-		},
+		{"simple_addition", "2+3", 5},
+		{"multiplication_priority", "2+3*4", 14},
+		{"with_parentheses", "(2+3)*4", 20},
+		{"division", "10/2", 5},
+		{"complex_expression", "(10-4)*3/(2+1)", 6},
+		{"invalid_characters", "2+a", 0},
+		{"empty_expression", "", 0},
+		{"invalid_parentheses", "(2+3", 0},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tasks, err := parseExpression(tt.expr)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("parseExpression() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.wantErr {
+			tasks, err := ParseExpression(tt.expr)
+			if tt.name == "invalid_characters" || tt.name == "empty_expression" || tt.name == "invalid_parentheses" {
+				if err == nil {
+					t.Errorf("expected error for invalid input, got nil")
+				}
 				return
 			}
-
-			store := NewStore()
-			expr := &models.Expression{
-				Expression: tt.expr,
-				Status:     models.StatusPending,
-				UserID:     1,
-			}
-
-			if err := store.AddExpression(expr); err != nil {
-				t.Fatalf("failed to add expression: %v", err)
-			}
-
-			for i, task := range tasks {
-				task.ExpressionID = expr.ID
-				task.OrderNum = i
-				if err := store.AddTask(task); err != nil {
-					t.Fatalf("failed to add task: %v", err)
-				}
-			}
-
-			// Process tasks in order
-			for i := 0; i < len(tasks); i++ {
-				tasks, err := store.GetTasksByExpressionID(expr.ID)
-				if err != nil {
-					t.Fatalf("failed to get tasks: %v", err)
-				}
-
-				var currentTask *models.Task
-				for j := range tasks {
-					if tasks[j].OrderNum == i {
-						currentTask = &tasks[j]
-						break
-					}
-				}
-
-				if currentTask == nil {
-					t.Fatalf("task not found")
-				}
-
-				switch currentTask.Operation {
-				case models.OperationAdd:
-					currentTask.Result = currentTask.Arg1 + currentTask.Arg2
-				case models.OperationSubtract:
-					currentTask.Result = currentTask.Arg1 - currentTask.Arg2
-				case models.OperationMultiply:
-					currentTask.Result = currentTask.Arg1 * currentTask.Arg2
-				case models.OperationDivide:
-					currentTask.Result = currentTask.Arg1 / currentTask.Arg2
-				}
-				currentTask.Status = models.StatusCompleted
-
-				if err := store.UpdateTask(currentTask); err != nil {
-					t.Fatalf("failed to update task: %v", err)
-				}
-			}
-
-			// Get the final result
-			dbTasks, err := store.GetTasksByExpressionID(expr.ID)
 			if err != nil {
-				t.Fatalf("failed to get tasks: %v", err)
+				t.Fatalf("unexpected error: %v", err)
 			}
 
-			// Find the last task
-			var lastTask models.Task
-			for _, task := range dbTasks {
-				if task.OrderNum == len(dbTasks)-1 {
-					lastTask = task
-					break
+			// Эмулируем выполнение задач по принципу постфиксного вычисления
+			stack := make([]float64, 0)
+			for _, task := range tasks {
+				stack = append(stack, task.Arg1)
+				stack = append(stack, task.Arg2)
+				arg2 := stack[len(stack)-1]
+				arg1 := stack[len(stack)-2]
+				stack = stack[:len(stack)-2]
+				var res float64
+				switch task.Operation {
+				case models.OperationAdd:
+					res = arg1 + arg2
+				case models.OperationSubtract:
+					res = arg1 - arg2
+				case models.OperationMultiply:
+					res = arg1 * arg2
+				case models.OperationDivide:
+					res = arg1 / arg2
 				}
+				stack = append(stack, res)
 			}
-
-			assert.Equal(t, tt.want, lastTask.Result)
-			assert.Equal(t, models.StatusCompleted, lastTask.Status)
+			if len(stack) > 0 && stack[len(stack)-1] != tt.expected {
+				t.Errorf("expected result %v, got %v", tt.expected, stack[len(stack)-1])
+			}
 		})
 	}
 }

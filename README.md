@@ -12,38 +12,61 @@ Calc Service - это веб-сервис для распределённых в
 
 2. **Установите GCC**:
    - Для Windows: Скачайте и установите MinGW-w64 с официального сайта по [инструкции](https://programforyou.ru/poleznoe/kak-ustanovit-gcc-dlya-windows?ysclid=majlp37z7w118007909).
+
 3. **Настройте переменную окружения CGO**:
    - Установите переменную окружения `CGO_ENABLED=1` для включения поддержки CGO:
      ```bash
      set CGO_ENABLED=1
      ```
 
-4. **Склонируйте репозиторий**:
+4. **Установите Protocol Buffers Compiler (protoc)**:
+   - Скачайте последнюю версию protoc для Windows: [protoc-25.1-win64.zip](https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-win64.zip)
+   - Распакуйте содержимое архива в папку `tools\protoc` проекта
+   - В результате должна появиться структура:
+     ```
+     tools/
+     └── protoc/
+         ├── bin/
+         │   └── protoc.exe
+         └── include/
+     ```
+
+5. **Установите Go плагины для protoc**:
    ```bash
-   git clone https://github.com/ladnaaaaaa/calc_service.git
-   cd calc_service
+   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
    ```
 
-5. **Запустите оркестратор**:
+6. **Сгенерируйте gRPC код**:
+   ```bash
+   .\scripts\generate_proto.bat
+   ```
+   После выполнения в папке `api` должны появиться файлы:
+   - `calculator.pb.go`
+   - `calculator_grpc.pb.go`
+
+7. **Скачайте зависимости проекта**:
+   ```bash
+   go mod tidy
+   ```
+
+8. **Запустите оркестратор**:
    ```bash
    go run ./cmd/orchestrator/...
    ```
+   Оркестратор запустит:
+   - HTTP-сервер на порту 8080 (для веб-интерфейса)
+   - gRPC-сервер на порту 50051 (для общения с агентами)
 
-6. **Запустите агент (в отдельном окне терминала)**:
+9. **Запустите агент (в отдельном окне терминала)**:
    ```bash
    go run ./cmd/agent/...
    ```
 
-7. **Откройте веб-интерфейс**:
-   - Перейдите по адресу [http://localhost:8080](http://localhost:8080) в браузере.
-   - Пройдите авторизацию.
-   - Введите арифметическое выражение и нажмите "Вычислить".
-
-8. **Запуск тестов**:
-   - Запустите тесты из интерфейса IDE или из командной строки:
-     ```bash
-     go test ./internal/orchestrator/... -v
-     ```
+10. **Откройте веб-интерфейс**:
+    - Перейдите по адресу [http://localhost:8080](http://localhost:8080) в браузере.
+    - Пройдите авторизацию.
+    - Введите арифметическое выражение и нажмите "Вычислить".
 
 ## Эндпоинты API
 
@@ -53,8 +76,12 @@ Calc Service - это веб-сервис для распределённых в
 - `POST /api/v1/calculate` - отправка выражения на вычисление.
 - `GET /api/v1/expressions` - получение списка выражений.
 - `GET /api/v1/expressions/:id` - получение выражения по ID.
-- `GET /internal/task` - получение задачи для вычисления.
-- `POST /internal/task` - отправка результата задачи.
+
+## gRPC API
+
+Сервис предоставляет следующие gRPC методы:
+- `GetTask` - получение задачи для вычисления.
+- `SubmitResult` - отправка результата вычисления.
 
 ## Переменные окружения
 
@@ -71,11 +98,3 @@ set TIME_MULTIPLICATIONS_MS=2000
 set TIME_SUBTRACTION_MS=1000
 set TIME_DIVISIONS_MS=3000
 ```
-
-## Последние изменения
-
-- Исправлены тесты в `storage_test.go` и `parser_test.go`.
-- Обновлена логика обновления результата выражения в `handleSubmitTask`.
-- Добавлен метод `UpdateExpression` в `Store` для корректного обновления результата выражения.
-- Улучшена обработка ошибок и логирование в сервисе.
-- Оптимизирована работа с базой данных для повышения производительности.

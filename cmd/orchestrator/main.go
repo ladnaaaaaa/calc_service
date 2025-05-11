@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -10,30 +11,28 @@ import (
 )
 
 func main() {
-	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found: %v", err)
 	}
 
-	// Check JWT_SECRET
 	if os.Getenv("JWT_SECRET") == "" {
 		log.Fatal("JWT_SECRET environment variable is not set")
 	}
 
-	// Initialize database
 	database.Init()
 
-	// Create server
 	server := orchestrator.NewServer()
 
-	// Get port from environment or use default
+	if err := server.StartGRPCServer(50051); err != nil {
+		log.Fatalf("failed to start gRPC server: %v", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Start server
-	if err := server.Start(":" + port); err != nil {
-		log.Fatal("Failed to start server:", err)
+	if err := server.Start(fmt.Sprintf(":%s", port)); err != nil {
+		log.Fatalf("failed to start server: %v", err)
 	}
 }

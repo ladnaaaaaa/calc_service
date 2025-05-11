@@ -156,9 +156,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
     if (token) {
-        document.getElementById('authSection').style.display = 'none';
-        document.getElementById('registerSection').style.display = 'none';
-        document.getElementById('calcSection').style.display = 'block';
-        loadExpressions();
+        // Проверяем валидность токена
+        fetch('/api/v1/expressions', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }).then(response => {
+            if (response.ok) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('registerSection').style.display = 'none';
+                document.getElementById('calcSection').style.display = 'block';
+                loadExpressions();
+            } else {
+                // Если токен невалиден, удаляем его и показываем форму входа
+                localStorage.removeItem('token');
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('registerSection').style.display = 'none';
+                document.getElementById('calcSection').style.display = 'none';
+            }
+        }).catch(() => {
+            // В случае ошибки также показываем форму входа
+            localStorage.removeItem('token');
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('calcSection').style.display = 'none';
+        });
     }
 });

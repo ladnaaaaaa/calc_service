@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"calc_service/internal/database"
-	"calc_service/internal/models"
+	"github.com/ladnaaaaaa/calc_service/internal/database"
+	"github.com/ladnaaaaaa/calc_service/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

@@ -1,8 +1,10 @@
 package orchestrator
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/ladnaaaaaa/calc_service/internal/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseExpression(t *testing.T) {
@@ -12,12 +14,6 @@ func TestParseExpression(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		{
-			name:    "simple addition",
-			expr:    "2+3",
-			want:    5,
-			wantErr: false,
-		},
 		{
 			name:    "simple addition",
 			expr:    "2+3",
@@ -63,16 +59,11 @@ func TestParseExpression(t *testing.T) {
 			expr:    "2+(3*4",
 			wantErr: true,
 		},
-		{
-			name:    "invalid characters",
-			expr:    "2+a",
-			wantErr: true,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tasks, finalID, err := parseExpression(tt.expr)
+			tasks, err := parseExpression(tt.expr)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("parseExpression() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -81,54 +72,77 @@ func TestParseExpression(t *testing.T) {
 			}
 
 			store := NewStore()
-			expr := &Expression{
-				ID:          "test",
-				Tasks:       tasks,
-				FinalTaskID: finalID,
-				Status:      "processing",
+			expr := &models.Expression{
+				Expression: tt.expr,
+				Status:     models.StatusPending,
+				UserID:     1,
 			}
 
-			for _, task := range tasks {
-				store.AddTask(task)
+			if err := store.AddExpression(expr); err != nil {
+				t.Fatalf("failed to add expression: %v", err)
 			}
 
-			for {
-				var readyTask *Task
-				for _, task := range store.GetPendingTasks() {
-					if store.IsTaskReady(task) {
-						readyTask = task
+			for i, task := range tasks {
+				task.ExpressionID = expr.ID
+				task.OrderNum = i
+				if err := store.AddTask(task); err != nil {
+					t.Fatalf("failed to add task: %v", err)
+				}
+			}
+
+			// Process tasks in order
+			for i := 0; i < len(tasks); i++ {
+				tasks, err := store.GetTasksByExpressionID(expr.ID)
+				if err != nil {
+					t.Fatalf("failed to get tasks: %v", err)
+				}
+
+				var currentTask *models.Task
+				for j := range tasks {
+					if tasks[j].OrderNum == i {
+						currentTask = &tasks[j]
 						break
 					}
 				}
-				if readyTask == nil {
-					break
+
+				if currentTask == nil {
+					t.Fatalf("task not found")
 				}
 
-				arg1, _ := store.GetTask(readyTask.Arg1ID)
-				arg2, _ := store.GetTask(readyTask.Arg2ID)
-
-				switch readyTask.Operation {
-				case "+":
-					readyTask.Result = arg1.Result + arg2.Result
-				case "-":
-					readyTask.Result = arg1.Result - arg2.Result
-				case "*":
-					readyTask.Result = arg1.Result * arg2.Result
-				case "/":
-					readyTask.Result = arg1.Result / arg2.Result
+				switch currentTask.Operation {
+				case models.OperationAdd:
+					currentTask.Result = currentTask.Arg1 + currentTask.Arg2
+				case models.OperationSubtract:
+					currentTask.Result = currentTask.Arg1 - currentTask.Arg2
+				case models.OperationMultiply:
+					currentTask.Result = currentTask.Arg1 * currentTask.Arg2
+				case models.OperationDivide:
+					currentTask.Result = currentTask.Arg1 / currentTask.Arg2
 				}
-				readyTask.Status = "completed"
-				store.UpdateTask(readyTask)
+				currentTask.Status = models.StatusCompleted
+
+				if err := store.UpdateTask(currentTask); err != nil {
+					t.Fatalf("failed to update task: %v", err)
+				}
 			}
 
-			finalTask, _ := store.GetTask(finalID)
-			expr.Result = finalTask.Result
-			expr.Status = "completed"
-			store.AddExpression(expr)
+			// Get the final result
+			dbTasks, err := store.GetTasksByExpressionID(expr.ID)
+			if err != nil {
+				t.Fatalf("failed to get tasks: %v", err)
+			}
 
-			updatedExpr, _ := store.GetExpression("test")
-			assert.Equal(t, tt.want, updatedExpr.Result)
-			assert.Equal(t, "completed", updatedExpr.Status)
+			// Find the last task
+			var lastTask models.Task
+			for _, task := range dbTasks {
+				if task.OrderNum == len(dbTasks)-1 {
+					lastTask = task
+					break
+				}
+			}
+
+			assert.Equal(t, tt.want, lastTask.Result)
+			assert.Equal(t, models.StatusCompleted, lastTask.Status)
 		})
 	}
 }

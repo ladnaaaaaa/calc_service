@@ -2,31 +2,62 @@ package orchestrator
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/ladnaaaaaa/calc_service/internal/handlers"
+	"github.com/ladnaaaaaa/calc_service/internal/middleware"
 )
 
 type Server struct {
-	engine *gin.Engine
+	Engine *gin.Engine
 	store  *Store
 }
 
 func NewServer() *Server {
-	return &Server{
-		engine: gin.Default(),
+	engine := gin.Default()
+	server := &Server{
+		Engine: engine,
 		store:  NewStore(),
 	}
+
+	// Load templates
+	engine.LoadHTMLGlob("web/templates/*")
+
+	// Setup all routes
+	server.setupRoutes()
+
+	return server
 }
 
 func (s *Server) Start(addr string) error {
-	s.engine.LoadHTMLGlob("web/templates/*")
-	s.setupRoutes()
-	s.registerWebRoutes()
-	return s.engine.Run(addr)
+	return s.Engine.Run(addr)
 }
 
 func (s *Server) setupRoutes() {
-	s.engine.POST("/api/v1/calculate", s.handleCalculate)
-	s.engine.GET("/api/v1/expressions", s.handleGetExpressions)
-	s.engine.GET("/api/v1/expressions/:id", s.handleGetExpression)
-	s.engine.GET("/internal/task", s.handleGetTask)
-	s.engine.POST("/internal/task", s.handleSubmitTask)
+	r := s.Engine
+
+	// Static files
+	r.Static("/static", "web/static")
+
+	// Web routes
+	r.GET("/", s.handleHome)
+	r.GET("/expressions", s.handleGetExpressionsRequest)
+
+	// Public API routes
+	r.POST("/api/v1/register", handlers.Register)
+	r.POST("/api/v1/login", handlers.Login)
+
+	// Protected API routes
+	protected := r.Group("/api/v1")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.POST("/calculate", s.handleCalculate)
+		protected.GET("/expressions", s.handleGetExpressions)
+		protected.GET("/expressions/:id", s.handleGetExpression)
+	}
+
+	// Internal routes for agent communication
+	internal := r.Group("/internal")
+	{
+		internal.GET("/task", s.handleGetTask)
+		internal.POST("/task", s.handleSubmitTask)
+	}
 }

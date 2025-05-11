@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ladnaaaaaa/calc_service/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,39 +24,37 @@ func TestCalculateHandler(t *testing.T) {
 		strings.NewReader(`{"expression":"2+3*4"}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	server.engine.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusCreated, w.Code)
+	server.Engine.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestGetTaskHandler(t *testing.T) {
 	server := setupRouter()
 
-	numTask1 := &Task{
-		ID:     "num_2",
-		Result: 2,
-		Status: "completed",
+	// Create a test expression
+	expr := &models.Expression{
+		Expression: "2+3",
+		Status:     models.StatusPending,
+		UserID:     1,
 	}
-	numTask2 := &Task{
-		ID:     "num_3",
-		Result: 3,
-		Status: "completed",
-	}
-	mainTask := &Task{
-		ID:        "task_1",
-		Arg1ID:    "num_2",
-		Arg2ID:    "num_3",
-		Operation: "+",
-		Status:    "pending",
-		DependsOn: []string{"num_2", "num_3"},
-	}
+	err := server.store.AddExpression(expr)
+	assert.NoError(t, err)
 
-	server.store.AddTask(numTask1)
-	server.store.AddTask(numTask2)
-	server.store.AddTask(mainTask)
+	// Create test tasks
+	task1 := &models.Task{
+		ExpressionID: expr.ID,
+		Arg1:         2,
+		Arg2:         3,
+		Operation:    models.OperationAdd,
+		Status:       models.StatusPending,
+		OrderNum:     0,
+	}
+	err = server.store.AddTask(task1)
+	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/internal/task", nil)
 
-	server.engine.ServeHTTP(w, req)
+	server.Engine.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

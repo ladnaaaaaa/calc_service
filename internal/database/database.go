@@ -1,12 +1,13 @@
 package database
 
 import (
-	"github.com/ladnaaaaaa/calc_service/internal/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/ladnaaaaaa/calc_service/internal/models"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
